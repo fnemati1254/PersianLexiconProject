@@ -1,0 +1,20 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+env/
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Private source data (NOT committed — only the derived data/ files are committed)
+build/*.xlsx
+build/*.csv
+build/*.xls

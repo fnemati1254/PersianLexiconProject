@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Persian Lexical Search | جستجوی ویژگی‌های واژگانی فارسی</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<header>
+  <h1>جستجوی ویژگی‌های واژگانی فارسی</h1>
+  <p class="subtitle">Persian Lexical Characteristics Search</p>
+</header>
+
+<main>
+
+  <!-- ── Input panel ── -->
+  <section class="input-panel card">
+    <div class="input-row">
+      <textarea
+        id="wordInput"
+        placeholder="یک یا چند واژه وارد کنید (هر واژه در یک خط)&#10;Enter one word per line"
+        rows="5"
+        dir="rtl"
+      ></textarea>
+    </div>
+
+    <div class="input-actions">
+      <label class="btn btn-secondary" title="بارگذاری فایل متنی (هر واژه یک خط)">
+        📂 بارگذاری فایل
+        <input type="file" id="fileInput" accept=".txt" hidden />
+      </label>
+
+      <button id="searchBtn" class="btn btn-primary">
+        🔍 جستجو / Search
+      </button>
+
+      <button id="clearBtn" class="btn btn-ghost">
+        پاک کردن / Clear
+      </button>
+    </div>
+
+    <div id="statusMsg" class="status-msg" hidden></div>
+  </section>
+
+  <!-- ── Column group selector ── -->
+  <section id="colGroupPanel" class="card" hidden>
+    <div class="col-group-row">
+      <strong>نمایش ستون‌ها / Show columns:</strong>
+      <label><input type="checkbox" class="grp" value="basic"   checked /> پایه / Basic</label>
+      <label><input type="checkbox" class="grp" value="gpc"     checked /> GPC / PGC</label>
+      <label><input type="checkbox" class="grp" value="ou"      checked /> OU</label>
+      <label><input type="checkbox" class="grp" value="pu"      checked /> PU</label>
+      <label><input type="checkbox" class="grp" value="mismatch"       /> Mismatch</label>
+      <label><input type="checkbox" class="grp" value="semantic"       /> Semantic Neighbourhood</label>
+    </div>
+  </section>
+
+  <!-- ── Results table ── -->
+  <section id="resultsSection" hidden>
+    <div class="results-header">
+      <span id="resultCount"></span>
+      <button id="exportBtn" class="btn btn-secondary">⬇ دانلود TSV / Export TSV</button>
+    </div>
+    <div class="table-scroll">
+      <table id="resultsTable" dir="ltr">
+        <thead id="tableHead"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ── Loading overlay ── -->
+  <div id="loadingOverlay" class="loading-overlay">
+    <div class="spinner"></div>
+    <p id="loadingMsg">در حال بارگذاری داده‌ها…<br>Loading lexicon data…</p>
+  </div>
+
+</main>
+
+<footer>
+  <p>
+    داده‌ها از واژگان فارسی شامل معیارهای OU، PU، GPC، PGC و همسایگی معنایی.
+    برای واژه‌های ناموجود در واژگان، معیارهای OU از روی جدول پیشوند/پسوند محاسبه می‌شوند.
+  </p>
+  <p style="direction:ltr;text-align:left;">
+    Lexicon includes OU, PU, GPC/PGC, and semantic neighbourhood metrics.
+    For out-of-lexicon words, OU is computed online from pre-built prefix/suffix tables;
+    PU and GPC/PGC require phonological transcriptions and are not available for missing words.
+  </p>
+</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
