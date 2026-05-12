@@ -48,7 +48,7 @@ A static GitHub Pages web app for looking up psycholinguistic metrics of Persian
 git init
 git add .
 git commit -m "Initial Persian Lexical Search app"
-git remote add origin https://github.com/<your-username>/persian-lexical-search.git
+git remote add origin https://github.com/<your-username>/PersianLexiconProject.git
 git push -u origin main
 ```
 
