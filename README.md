@@ -19,7 +19,9 @@ A static GitHub Pages web app for looking up psycholinguistic metrics of Persian
 
 ## Metrics based on
 
-- **Orthographic / Phonological Uncertainty**: Westbury, C. (2021). Implicit phonological and orthographic uncertainty in the mental lexicon. *Journal of Experimental Psychology: General*.
+- **Orthographic / Phonological Uncertainty**: Westbury, C., & Yang, M. (2025). Orthographic uncertainty: An entropy-based measure of word form typicality. *The Mental Lexicon, 19*(3), 439–495. https://doi.org/10.1075/ml.24006.wes
+- **Lexicon & Neighbourhood**: Nemati, F., Westbury, C., Hollis, G., & Haghbin, H. (2022). The Persian Lexicon project: Minimized orthographic neighbourhood effects in a dense language. *Journal of Psycholinguistic Research, 51*(5), 957–979. https://doi.org/10.1007/s10936-022-09863-x
+- **Affective Norms (E-PLAN)**: Nemati, F., Westbury, C., Rostami, H., et al. (2026). Extrapolated Persian Lexical Affect Norms (E-PLAN) from best–worst judgments of valence, arousal, dominance, and concreteness. *Behavior Research Methods, 58*, 111. https://doi.org/10.3758/s13428-026-02963-9
 - **GPC / PGC entropy**: Shannon entropy of grapheme-to-phoneme and phoneme-to-grapheme mappings derived from forced-alignment data.
 - **Semantic neighbourhood**: Cosine similarity in word2vec PCA space (k=25/50 nearest neighbours).
 

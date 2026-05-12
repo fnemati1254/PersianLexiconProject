@@ -220,30 +220,22 @@ def _first_valid(*series):
 def _col(name):
     return df[name] if name in df.columns else pd.Series([np.nan]*len(df), index=df.index)
 
-df["Valence"] = _first_valid(
-    _col("Nem_ValenceValue"), _col("Mokh_ValenceMean"),
-    _col("Bagheri_ValenceM"), _col("Predicted_Valence")
-)
-df["Arousal"] = _first_valid(
-    _col("Nem_ArousalValue"), _col("Mokh_ArousalMean"),
-    _col("Bagheri_ArousalM"), _col("Predicted_Arousal")
-)
-df["Dominance"] = _first_valid(
-    _col("Nem_DominanceValue"), _col("Predicted_Dominance")
-)
-df["Concreteness"] = _first_valid(
-    _col("Nem_ConcretenessValue"), _col("Predicted_Concreteness"),
-    _col("ThL_concreteness")
-)
+# Sources (in order of priority):
+#   1. Nemati et al. (2026) E-PLAN — human best-worst judgments
+#   2. Predicted values (Predicted_Valence / Arousal / Dominance / Concreteness)
+df["Valence"]      = _first_valid(_col("Nem_ValenceValue"),     _col("Predicted_Valence"))
+df["Arousal"]      = _first_valid(_col("Nem_ArousalValue"),     _col("Predicted_Arousal"))
+df["Dominance"]    = _first_valid(_col("Nem_DominanceValue"),   _col("Predicted_Dominance"))
+df["Concreteness"] = _first_valid(_col("Nem_ConcretenessValue"),_col("Predicted_Concreteness"))
 
-# Affect_Source: "Human" if Nem_ column was the source, else "Predicted"
+# Affect_Source reflects which paper's data was used
 human_mask = (
     _col("Nem_ValenceValue").notna() |
     _col("Nem_ArousalValue").notna() |
     _col("Nem_DominanceValue").notna() |
     _col("Nem_ConcretenessValue").notna()
 )
-df["Affect_Source"] = np.where(human_mask, "Human", "Predicted")
+df["Affect_Source"] = np.where(human_mask, "E-PLAN (Nemati et al., 2026)", "Predicted")
 # Words with no affective data at all
 no_affect = df[["Valence","Arousal","Dominance","Concreteness"]].isna().all(axis=1)
 df.loc[no_affect, "Affect_Source"] = ""
