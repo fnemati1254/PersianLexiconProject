@@ -77,6 +77,37 @@ const MEASURE_INFO = {
   ClusteringCoeff_k25: "ضریب خوشه‌بندی محلی در k=25 / Local clustering coefficient at k=25.",
 };
 
+// Per-measure reference shown in the info modal footer
+const REF_WY2025  = "Westbury, C., &amp; Yang, M. (2025). Orthographic uncertainty: An entropy-based measure of word form typicality. <em>The Mental Lexicon, 19</em>(3), 439–495. https://doi.org/10.1075/ml.24006.wes";
+const REF_NEM2026 = "Nemati, F., Westbury, C., Rostami, H., et al. (2026). Extrapolated Persian Lexical Affect Norms (E-PLAN). <em>Behavior Research Methods, 58</em>, 111. https://doi.org/10.3758/s13428-026-02963-9";
+const REF_NEM2022 = "Nemati, F., Westbury, C., Hollis, G., &amp; Haghbin, H. (2022). The Persian Lexicon project. <em>Journal of Psycholinguistic Research, 51</em>(5), 957–979. https://doi.org/10.1007/s10936-022-09863-x";
+
+const MEASURE_REF = {
+  // Orthographic / Phonological Uncertainty
+  OUF: REF_WY2025, OUB: REF_WY2025, OU: REF_WY2025,
+  MAXOUF: REF_WY2025, MAXOUB: REF_WY2025, MINOUF: REF_WY2025, MINOUB: REF_WY2025,
+  PUF: REF_WY2025, PUB: REF_WY2025, PU: REF_WY2025,
+  MAXPUF: REF_WY2025, MAXPUB: REF_WY2025, MINPUF: REF_WY2025, MINPUB: REF_WY2025,
+  OU_PU_Mismatch: REF_WY2025, OUF_PUF_Mismatch: REF_WY2025, OUB_PUB_Mismatch: REF_WY2025,
+  // Affective norms
+  Valence: REF_NEM2026, Arousal: REF_NEM2026, Dominance: REF_NEM2026,
+  Concreteness: REF_NEM2026, Affect_Source: REF_NEM2026,
+  // Everything else — lexicon & neighbourhood & GPC/PGC & semantic
+  WORD: REF_NEM2022, Transcription1: REF_NEM2022,
+  PerMilFreq: REF_NEM2022, zipf: REF_NEM2022, Length: REF_NEM2022,
+  AvePhonLength: REF_NEM2022, n_syllables: REF_NEM2022,
+  WeightedPN: REF_NEM2022, AveragedPhonNeighbourFreq: REF_NEM2022,
+  OrthographicNeighbours: REF_NEM2022, AveragedOrthographicNeighboursFrequency: REF_NEM2022,
+  H_GPC_word: REF_NEM2022, H_PGC_word: REF_NEM2022,
+  H_GPC_grapheme_word: REF_NEM2022, H_PGC_grapheme_word: REF_NEM2022,
+  H_GPC_onset_word: REF_NEM2022, H_PGC_onset_word: REF_NEM2022,
+  H_GPC_rime_word: REF_NEM2022, H_PGC_rime_word: REF_NEM2022,
+  H_GPC_OVC_word: REF_NEM2022, H_PGC_OVC_word: REF_NEM2022,
+  SN_k25: REF_NEM2022, SN_k50: REF_NEM2022,
+  Entropy_beta5: REF_NEM2022, Entropy_beta10: REF_NEM2022,
+  Dispersion_k50: REF_NEM2022, Hubness_k50: REF_NEM2022, ClusteringCoeff_k25: REF_NEM2022,
+};
+
 // =============================================================
 // COLUMN GROUP DEFINITIONS
 // =============================================================
@@ -613,6 +644,9 @@ function showInfoModal(key, desc) {
   document.getElementById("infoModalTitle").textContent = key;
   document.getElementById("infoModalBody").innerHTML =
     desc.replace(/\//g, " <span class='sep'>/</span> ");
+  const ref = MEASURE_REF[key] || REF_NEM2022;
+  document.getElementById("infoModalRef").innerHTML =
+    "مرجع / Reference: " + ref;
   document.getElementById("infoModal").classList.add("open");
 }
 
