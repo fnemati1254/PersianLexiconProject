@@ -766,7 +766,11 @@ document.getElementById("fileInput").addEventListener("change", e => {
       const wb = XLSX.read(new Uint8Array(ev.target.result), { type: "array" });
       const sheet = wb.Sheets[wb.SheetNames[0]];
       const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-      const words = rows
+      const hasHeader = confirm(
+        "آیا ردیف اول سرستون (عنوان) است؟\nDoes the first row contain a header?"
+      );
+      const dataRows = hasHeader ? rows.slice(1) : rows;
+      const words = dataRows
         .map(r => (r[0] !== undefined && r[0] !== null ? String(r[0]).trim() : ""))
         .filter(w => w.length > 0);
       document.getElementById("wordInput").value = words.join("\n");
