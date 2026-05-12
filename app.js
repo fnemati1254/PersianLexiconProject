@@ -39,8 +39,8 @@ const MEASURE_INFO = {
   H_PGC_onset_word:    "آنتروپی PGC برای واج آغازین هجا (onset) / PGC entropy for the syllable-onset phoneme.",
   H_GPC_rime_word:     "آنتروپی GPC برای حروف قافیه هجا (هسته + کدا) / GPC entropy for the syllable rime graphemes (nucleus + coda).",
   H_PGC_rime_word:     "آنتروپی PGC برای واج‌های قافیه هجا / PGC entropy for the syllable rime phoneme sequence.",
-  H_GPC_OVC_word:      "آنتروپی GPC در چارچوب هجا (آغاز–واکه–کدا / OVC) / GPC entropy of the vowel within its syllable Onset-Vowel-Coda context.",
-  H_PGC_OVC_word:      "آنتروپی PGC در چارچوب هجا (آغاز–واکه–کدا / OVC) / PGC entropy of the vowel within its syllable OVC context.",
+  H_GPC_OVC_word:      "آنتروپی GPC در چارچوب هجا (آغاز–واکه–کدا) / GPC entropy of the vowel within its syllable Onset-Vowel-Coda (OVC) context.",
+  H_PGC_OVC_word:      "آنتروپی PGC در چارچوب هجا (آغاز–واکه–کدا) / PGC entropy of the vowel within its syllable Onset-Vowel-Coda (OVC) context.",
 
   OUF:    "عدم قطعیت آوایی رو به جلو (Westbury &amp; Yang, 2025): میانگین آنتروپی پیشوندها / Orthographic Uncertainty Forward: mean entropy of all orthographic prefixes (Westbury &amp; Yang, 2025).",
   OUB:    "عدم قطعیت آوایی رو به عقب: میانگین آنتروپی پسوندها / Orthographic Uncertainty Backward: mean entropy of all orthographic suffixes.",
@@ -124,8 +124,8 @@ const COL_GROUPS = [
       { key: "H_PGC_onset_word",    label: "H_PGC_onset",     fmt: 4 },
       { key: "H_GPC_rime_word",     label: "H_GPC_rime",      fmt: 4 },
       { key: "H_PGC_rime_word",     label: "H_PGC_rime",      fmt: 4 },
-      { key: "H_GPC_OVC_word",      label: "H_GPC_هجا",       fmt: 4 },
-      { key: "H_PGC_OVC_word",      label: "H_PGC_هجا",       fmt: 4 },
+      { key: "H_GPC_OVC_word",      label: "H_GPC_OVC",       fmt: 4 },
+      { key: "H_PGC_OVC_word",      label: "H_PGC_OVC",       fmt: 4 },
     ],
   },
   {
