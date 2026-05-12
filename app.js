@@ -124,8 +124,8 @@ const COL_GROUPS = [
       { key: "H_PGC_onset_word",    label: "H_PGC_onset",     fmt: 4 },
       { key: "H_GPC_rime_word",     label: "H_GPC_rime",      fmt: 4 },
       { key: "H_PGC_rime_word",     label: "H_PGC_rime",      fmt: 4 },
-      { key: "H_GPC_OVC_word",      label: "H_GPC_هجا (OVC)", fmt: 4 },
-      { key: "H_PGC_OVC_word",      label: "H_PGC_هجا (OVC)", fmt: 4 },
+      { key: "H_GPC_OVC_word",      label: "H_GPC_هجا",       fmt: 4 },
+      { key: "H_PGC_OVC_word",      label: "H_PGC_هجا",       fmt: 4 },
     ],
   },
   {
