@@ -95,7 +95,7 @@ const COL_GROUPS = [
     ],
   },
   {
-    id: "affective", label: "هنجارهای عاطفی / Affective Norms",
+    id: "affective", label: "هنجارهای عاطفی و معنایی / Affective Norms",
     cols: [
       { key: "Valence",       label: "Valence خوشایندی",  fmt: 3 },
       { key: "Arousal",       label: "Arousal هیجان",     fmt: 3 },
