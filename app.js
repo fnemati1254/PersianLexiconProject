@@ -759,12 +759,27 @@ document.getElementById("wordInput").addEventListener("keydown", e => {
 document.getElementById("fileInput").addEventListener("change", e => {
   const file = e.target.files[0];
   if (!file) return;
+  const isXlsx = file.name.toLowerCase().endsWith(".xlsx");
   const reader = new FileReader();
-  reader.onload = ev => {
-    document.getElementById("wordInput").value = ev.target.result;
-    setStatus(`فایل بارگذاری شد: ${file.name}`, "ok");
-  };
-  reader.readAsText(file, "utf-8");
+  if (isXlsx) {
+    reader.onload = ev => {
+      const wb = XLSX.read(new Uint8Array(ev.target.result), { type: "array" });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+      const words = rows
+        .map(r => (r[0] !== undefined && r[0] !== null ? String(r[0]).trim() : ""))
+        .filter(w => w.length > 0);
+      document.getElementById("wordInput").value = words.join("\n");
+      setStatus(`فایل بارگذاری شد: ${file.name} — ${words.length} واژه / ${words.length} words loaded`, "ok");
+    };
+    reader.readAsArrayBuffer(file);
+  } else {
+    reader.onload = ev => {
+      document.getElementById("wordInput").value = ev.target.result;
+      setStatus(`فایل بارگذاری شد: ${file.name}`, "ok");
+    };
+    reader.readAsText(file, "utf-8");
+  }
   e.target.value = "";
 });
 
