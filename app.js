@@ -62,6 +62,12 @@ const MEASURE_INFO = {
   OUF_PUF_Mismatch: "ناهمخوانی رو به جلو = OUF − PUF / Forward mismatch = OUF − PUF.",
   OUB_PUB_Mismatch: "ناهمخوانی رو به عقب = OUB − PUB / Backward mismatch = OUB − PUB.",
 
+  Valence:       "خوشایندی واژه (۱=ناخوشایند، ۹=خوشایند) — منبع: داده‌های انسانی یا پیش‌بینی‌شده / Word valence (1=unpleasant, 9=pleasant). Source: human-rated or model-predicted.",
+  Arousal:       "برانگیختگی واژه (۱=آرام، ۹=برانگیخته) / Arousal (1=calm, 9=excited). Human-rated or predicted.",
+  Dominance:     "سلطه واژه (۱=تحت‌کنترل، ۹=کنترل‌کننده) / Dominance (1=controlled, 9=in-control). Human-rated or predicted.",
+  Concreteness:  "عینیت واژه (۱=انتزاعی، ۹=عینی) / Concreteness (1=abstract, 9=concrete). Human-rated or predicted.",
+  Affect_Source: "منبع هنجارهای عاطفی: Human = هنجارسازی‌شده توسط انسان؛ Predicted = پیش‌بینی‌شده توسط مدل / Affective norm source: Human = human-rated; Predicted = model-predicted.",
+
   SN_k25: "اندازه همسایگی معنایی در k=25 (شباهت کسینوس در فضای word2vec) / Semantic neighbourhood size at k=25 (cosine similarity in word2vec PCA space).",
   SN_k50: "اندازه همسایگی معنایی در k=50 / Semantic neighbourhood size at k=50.",
   Entropy_beta5:  "آنتروپی همسایگی با دمای β=5 / Neighbourhood entropy with temperature β=5.",
@@ -86,6 +92,16 @@ const COL_GROUPS = [
       { key: "AvePhonLength",  label: "طول آوایی",  fmt: 2 },
       { key: "n_syllables",    label: "هجا",        fmt: 2 },
       { key: "_source",        label: "منبع",       fmt: "str" },
+    ],
+  },
+  {
+    id: "affective", label: "هنجارهای عاطفی / Affective Norms",
+    cols: [
+      { key: "Valence",       label: "Valence خوشایندی",  fmt: 3 },
+      { key: "Arousal",       label: "Arousal هیجان",     fmt: 3 },
+      { key: "Dominance",     label: "Dominance سلطه",    fmt: 3 },
+      { key: "Concreteness",  label: "Concreteness عینیت", fmt: 3 },
+      { key: "Affect_Source", label: "منبع / Source",     fmt: "str" },
     ],
   },
   {
@@ -620,7 +636,7 @@ function buildColPanel() {
     cb.type  = "checkbox";
     cb.className = "grp";
     cb.value = grp.id;
-    cb.checked = ["basic","gpc","ou","pu"].includes(grp.id);
+    cb.checked = ["basic","affective","gpc","ou","pu"].includes(grp.id);
     cb.addEventListener("change", () => { if (lastResults.length) renderTable(lastResults); });
 
     const text = document.createTextNode(" " + grp.label + " ");

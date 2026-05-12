@@ -71,20 +71,27 @@ TRANSCRIPTION_COLS = [
 ]
 
 EXPORT_COLS = [
-    "WORD_norm",           # normalised form used as lookup key
-    "WORD",                # original orthographic form
+    # ── Identity / basic ──────────────────────────────────────
+    "WORD_norm",
+    "WORD",
     "Transcription1",
     "PerMilFreq",
     "zipf",
     "Length",
     "AvePhonLength",
     "n_syllables",
-    # Neighbourhood
+
+    # ── Affective norms (merged; computed below) ───────────────
+    # Valence, Arousal, Dominance, Concreteness, Affect_Source
+    # are added programmatically after loading the lexicon.
+
+    # ── Phonological / orthographic neighbourhood ──────────────
     "WeightedPN",
     "AveragedPhonNeighbourFreq",
     "OrthographicNeighbours",
     "AveragedOrthographicNeighboursFrequency",
-    # GPC / PGC
+
+    # ── GPC / PGC ─────────────────────────────────────────────
     "H_GPC_word",
     "H_PGC_word",
     "H_GPC_grapheme_word",
@@ -95,19 +102,26 @@ EXPORT_COLS = [
     "H_PGC_rime_word",
     "H_GPC_OVC_word",
     "H_PGC_OVC_word",
-    # Orthographic Uncertainty
+
+    # ── Orthographic Uncertainty ───────────────────────────────
     "OUF", "OUB", "OU",
     "MAXOUF", "MAXOUB", "MINOUF", "MINOUB",
-    # Phonological Uncertainty
+
+    # ── Phonological Uncertainty ───────────────────────────────
     "PUF", "PUB", "PU",
     "MAXPUF", "MAXPUB", "MINPUF", "MINPUB",
-    # OU-PU mismatch
+
+    # ── OU–PU mismatch ─────────────────────────────────────────
     "OU_PU_Mismatch", "OUF_PUF_Mismatch", "OUB_PUB_Mismatch",
-    # Semantic neighbourhood
+
+    # ── Semantic neighbourhood ─────────────────────────────────
     "SN_k25", "SN_k50",
     "Entropy_beta5", "Entropy_beta10",
     "Dispersion_k50", "Hubness_k50", "ClusteringCoeff_k25",
 ]
+
+# Affective columns inserted right after n_syllables (position 8)
+AFFECTIVE_EXPORT_COLS = ["Valence", "Arousal", "Dominance", "Concreteness", "Affect_Source"]
 
 # ==========================================================
 # NORMALISATION
@@ -185,11 +199,75 @@ if "Length" not in df.columns:
     df["Length"] = df["WORD_norm"].str.len()
 
 # ==========================================================
+# STEP 1b — compute merged affective columns
+#   Priority (human first, predicted fallback):
+#     Valence    : Nem_ValenceValue  → Mokh_ValenceMean → Predicted_Valence
+#     Arousal    : Nem_ArousalValue  → Mokh_ArousalMean → Predicted_Arousal
+#     Dominance  : Nem_DominanceValue                   → Predicted_Dominance
+#     Concreteness: Nem_ConcretenessValue                → Predicted_Concreteness
+#     Affect_Source: "Human" if any human column used, else "Predicted"
+# ==========================================================
+print("Computing merged affective columns ...")
+
+def _first_valid(*series):
+    """Return first non-NaN value across the given series for each row."""
+    result = pd.Series([np.nan] * len(series[0]), index=series[0].index)
+    for s in series:
+        s = pd.to_numeric(s, errors="coerce")
+        result = result.where(result.notna(), s)
+    return result
+
+def _col(name):
+    return df[name] if name in df.columns else pd.Series([np.nan]*len(df), index=df.index)
+
+df["Valence"] = _first_valid(
+    _col("Nem_ValenceValue"), _col("Mokh_ValenceMean"),
+    _col("Bagheri_ValenceM"), _col("Predicted_Valence")
+)
+df["Arousal"] = _first_valid(
+    _col("Nem_ArousalValue"), _col("Mokh_ArousalMean"),
+    _col("Bagheri_ArousalM"), _col("Predicted_Arousal")
+)
+df["Dominance"] = _first_valid(
+    _col("Nem_DominanceValue"), _col("Predicted_Dominance")
+)
+df["Concreteness"] = _first_valid(
+    _col("Nem_ConcretenessValue"), _col("Predicted_Concreteness"),
+    _col("ThL_concreteness")
+)
+
+# Affect_Source: "Human" if Nem_ column was the source, else "Predicted"
+human_mask = (
+    _col("Nem_ValenceValue").notna() |
+    _col("Nem_ArousalValue").notna() |
+    _col("Nem_DominanceValue").notna() |
+    _col("Nem_ConcretenessValue").notna()
+)
+df["Affect_Source"] = np.where(human_mask, "Human", "Predicted")
+# Words with no affective data at all
+no_affect = df[["Valence","Arousal","Dominance","Concreteness"]].isna().all(axis=1)
+df.loc[no_affect, "Affect_Source"] = ""
+
+n_human = human_mask.sum()
+n_pred  = (~human_mask & ~no_affect).sum()
+print(f"  Affective: {n_human} human-rated, {n_pred} predicted, "
+      f"{no_affect.sum()} no data")
+
+# ==========================================================
 # STEP 2 — write lexicon_data.tsv
 # ==========================================================
 print("Writing lexicon_data.tsv ...")
 
-out_cols = [c for c in EXPORT_COLS if c in df.columns]
+# Build final column list: basic cols + affective block inserted after n_syllables
+_base = [c for c in EXPORT_COLS if c in df.columns]
+_insert_after = "n_syllables"
+if _insert_after in _base:
+    _idx = _base.index(_insert_after) + 1
+    _base = _base[:_idx] + AFFECTIVE_EXPORT_COLS + _base[_idx:]
+else:
+    _base = _base + AFFECTIVE_EXPORT_COLS
+out_cols = _base
+
 missing = [c for c in EXPORT_COLS if c not in df.columns]
 if missing:
     print(f"  NOTE: columns absent (will be blank): {missing}")

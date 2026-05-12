@@ -98,15 +98,31 @@
 
 <footer>
   <p>
-    داده‌ها از واژگان فارسی شامل معیارهای عدم قطعیت آوایی، عدم قطعیت واجی،
-    انطباق حرف-واج، انطباق واج-حرف و همسایگی معنایی.
-    برای واژه‌های ناموجود در واژگان، معیارهای عدم قطعیت آوایی از روی جدول پیشوند/پسوند محاسبه می‌شوند.
+    داده‌ها از واژگان فارسی (۶۲٬۰۴۱ واژه) شامل معیارهای زیر است:
+    بسامد (در میلیون و مقیاس زیف)؛
+    هنجارهای عاطفی (خوشایندی، برانگیختگی، سلطه، عینیت — منابع انسانی یا پیش‌بینی‌شده)؛
+    همسایگی آوایی و نوشتاری؛
+    انطباق حرف-واج (GPC) و واج-حرف (PGC) در سطوح کلمه، تک‌حرف، آغازه، قافیه و OVC؛
+    عدم قطعیت آوایی (OU) و واجی (PU) بر اساس Westbury (2021)؛
+    شاخص‌های ناهمخوانی OU–PU؛
+    همسایگی معنایی در فضای word2vec.
+    برای واژه‌های ناموجود در واژگان، معیارهای عدم قطعیت آوایی از روی جدول پیشوند/پسوند محاسبه می‌شوند
+    و پس از وارد کردن آوانگاری، معیارهای واجی نیز محاسبه می‌گردند.
+    همه پردازش‌ها کاملاً محلی است و هیچ داده‌ای به سرور ارسال نمی‌شود.
   </p>
   <p dir="ltr" style="text-align:left;">
-    Lexicon includes Orthographic Uncertainty, Phonological Uncertainty, Grapheme-to-Phoneme
-    Correspondence (GPC), Phoneme-to-Grapheme Correspondence (PGC), and Semantic Neighbourhood metrics.
-    For out-of-lexicon words, Orthographic Uncertainty is computed in-browser from pre-built
-    prefix/suffix tables; PU and GPC/PGC are computed after the user provides a valid phonological transcription.
+    Persian lexical database (62,041 words) covering:
+    <strong>Frequency</strong> (per-million &amp; Zipf scale) ·
+    <strong>Affective norms</strong> — Valence, Arousal, Dominance, Concreteness
+      (human-rated where available, model-predicted otherwise) ·
+    <strong>Phonological &amp; orthographic neighbourhood</strong> (weighted PN, ON size &amp; mean frequencies) ·
+    <strong>GPC / PGC entropy</strong> at word, grapheme, onset, rime, and OVC levels ·
+    <strong>Orthographic Uncertainty</strong> — OUF, OUB, OU, MAX/MIN variants (Westbury 2021) ·
+    <strong>Phonological Uncertainty</strong> — PUF, PUB, PU, MAX/MIN variants ·
+    <strong>OU–PU mismatch indices</strong> ·
+    <strong>Semantic neighbourhood</strong> — SN k=25/50, entropy, dispersion, hubness, clustering (word2vec PCA space).
+    For out-of-lexicon words, OU is computed in-browser from pre-built prefix/suffix tables;
+    PU and GPC/PGC are computed once the user supplies a valid IPA transcription.
     All processing is local — no data is sent to any server.
   </p>
 </footer>
