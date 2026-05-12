@@ -20,14 +20,14 @@
     <div class="input-row">
       <textarea
         id="wordInput"
-        placeholder="یک یا چند واژه وارد کنید (هر واژه در یک خط)&#10;Enter one word per line"
+        placeholder="یک یا چند واژه وارد کنید (هر واژه در یک خط)&#10;Enter one word per line — or Ctrl+Enter to search"
         rows="5"
         dir="rtl"
       ></textarea>
     </div>
 
     <div class="input-actions">
-      <label class="btn btn-secondary" title="بارگذاری فایل متنی (هر واژه یک خط)">
+      <label class="btn btn-secondary" title="بارگذاری فایل متنی (هر واژه یک خط) / Upload .txt file">
         📂 بارگذاری فایل
         <input type="file" id="fileInput" accept=".txt" hidden />
       </label>
@@ -44,20 +44,15 @@
     <div id="statusMsg" class="status-msg" hidden></div>
   </section>
 
-  <!-- ── Column group selector ── -->
+  <!-- ── Column group selector (built by JS) ── -->
   <section id="colGroupPanel" class="card" hidden>
-    <div class="col-group-row">
-      <strong>نمایش ستون‌ها / Show columns:</strong>
-      <label><input type="checkbox" class="grp" value="basic"   checked /> پایه / Basic</label>
-      <label><input type="checkbox" class="grp" value="gpc"     checked /> GPC / PGC</label>
-      <label><input type="checkbox" class="grp" value="ou"      checked /> OU</label>
-      <label><input type="checkbox" class="grp" value="pu"      checked /> PU</label>
-      <label><input type="checkbox" class="grp" value="mismatch"       /> Mismatch</label>
-      <label><input type="checkbox" class="grp" value="semantic"       /> Semantic Neighbourhood</label>
-    </div>
+    <p class="col-panel-hint" dir="ltr">
+      Click a measure label to see its definition. Check/uncheck groups to show or hide columns.
+    </p>
+    <div class="col-group-row"></div>
   </section>
 
-  <!-- ── Results table ── -->
+  <!-- ── Results ── -->
   <section id="resultsSection" hidden>
     <div class="results-header">
       <span id="resultCount"></span>
@@ -69,7 +64,29 @@
         <tbody id="tableBody"></tbody>
       </table>
     </div>
+    <p class="computed-legend">
+      <span class="swatch computed-swatch"></span>
+      واژه‌های محاسبه‌شده (خارج از واژگان) — برای محاسبه PU و GPC/PGC آوانگاری را وارد کنید
+      / Computed rows (not in lexicon) — enter a transcription to compute PU and GPC/PGC.
+    </p>
   </section>
+
+  <!-- ── Info modal ── -->
+  <div id="infoModal" class="modal-overlay" role="dialog" aria-modal="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 id="infoModalTitle"></h3>
+        <button id="infoModalClose" class="modal-close" aria-label="بستن / Close">✕</button>
+      </div>
+      <div class="modal-body">
+        <p id="infoModalBody"></p>
+      </div>
+      <p class="modal-ref">
+        مرجع: Westbury, C. (2021). Implicit phonological and orthographic uncertainty in the mental lexicon.
+        <em>Journal of Experimental Psychology: General.</em>
+      </p>
+    </div>
+  </div>
 
   <!-- ── Loading overlay ── -->
   <div id="loadingOverlay" class="loading-overlay">
@@ -81,13 +98,16 @@
 
 <footer>
   <p>
-    داده‌ها از واژگان فارسی شامل معیارهای OU، PU، GPC، PGC و همسایگی معنایی.
-    برای واژه‌های ناموجود در واژگان، معیارهای OU از روی جدول پیشوند/پسوند محاسبه می‌شوند.
+    داده‌ها از واژگان فارسی شامل معیارهای عدم قطعیت آوایی، عدم قطعیت واجی،
+    انطباق حرف-واج، انطباق واج-حرف و همسایگی معنایی.
+    برای واژه‌های ناموجود در واژگان، معیارهای عدم قطعیت آوایی از روی جدول پیشوند/پسوند محاسبه می‌شوند.
   </p>
-  <p style="direction:ltr;text-align:left;">
-    Lexicon includes OU, PU, GPC/PGC, and semantic neighbourhood metrics.
-    For out-of-lexicon words, OU is computed online from pre-built prefix/suffix tables;
-    PU and GPC/PGC require phonological transcriptions and are not available for missing words.
+  <p dir="ltr" style="text-align:left;">
+    Lexicon includes Orthographic Uncertainty, Phonological Uncertainty, Grapheme-to-Phoneme
+    Correspondence (GPC), Phoneme-to-Grapheme Correspondence (PGC), and Semantic Neighbourhood metrics.
+    For out-of-lexicon words, Orthographic Uncertainty is computed in-browser from pre-built
+    prefix/suffix tables; PU and GPC/PGC are computed after the user provides a valid phonological transcription.
+    All processing is local — no data is sent to any server.
   </p>
 </footer>
 
