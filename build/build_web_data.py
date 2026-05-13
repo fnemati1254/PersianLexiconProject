@@ -381,6 +381,229 @@ with open(os.path.join(DATA_DIR, "phoneme_entropy.json"), "w", encoding="utf-8")
     json.dump(pgc_by_phoneme, fh, ensure_ascii=False)
 
 # ==========================================================
+# STEP 5b — position-specific GPC / PGC entropy tables
+#   Uses Word_level_metrics alignments to label each grapheme/phoneme
+#   occurrence as onset, nucleus, or coda, then builds per-position
+#   entropy tables exported as JSON.
+# ==========================================================
+print("Building position-specific GPC/PGC entropy tables ...")
+
+VOWELS_IPA = {"a", "e", "o", "ɑ", "i", "u", "ɛ", "ɔ"}
+DIGRAPHS_IPA = {"tʃ", "dʒ"}
+NULL_G = "∅"
+
+
+def _tok_ipa(s: str) -> list:
+    """Tokenise IPA string; digraphs tʃ/dʒ count as one segment."""
+    segs, i = [], 0
+    while i < len(s):
+        if i + 1 < len(s) and s[i:i+2] in DIGRAPHS_IPA:
+            segs.append(s[i:i+2]); i += 2
+        else:
+            segs.append(s[i]); i += 1
+    return segs
+
+
+def _label_pos(segs: list) -> list:
+    """Label each IPA segment as 'onset', 'nucleus', or 'coda'."""
+    n = len(segs)
+    if n == 0:
+        return []
+    vowel_pos = [i for i, s in enumerate(segs) if s in VOWELS_IPA]
+    labels = [None] * n
+    if not vowel_pos:
+        return ["onset"] * n
+    for vi, vp in enumerate(vowel_pos):
+        labels[vp] = "nucleus"
+        # Onset for this syllable
+        if vi == 0:
+            onset_start = 0
+        else:
+            prev_vp = vowel_pos[vi - 1]
+            btwn = list(range(prev_vp + 1, vp))
+            if len(btwn) == 0:
+                onset_start = vp
+            elif len(btwn) == 1:
+                onset_start = btwn[0]
+            elif len(btwn) == 2:
+                if labels[btwn[0]] is None: labels[btwn[0]] = "coda"
+                onset_start = btwn[1]
+            else:
+                for i in btwn[:-2]:
+                    if labels[i] is None: labels[i] = "coda"
+                onset_start = btwn[-2]
+        for i in range(onset_start, vp):
+            if labels[i] is None: labels[i] = "onset"
+        # Coda for this syllable
+        if vi + 1 < len(vowel_pos):
+            next_vp = vowel_pos[vi + 1]
+            btwn_after = list(range(vp + 1, next_vp))
+            if len(btwn_after) >= 2:
+                if labels[btwn_after[0]] is None: labels[btwn_after[0]] = "coda"
+        else:
+            for i in range(vp + 1, n):
+                if labels[i] is None: labels[i] = "coda"
+    for i in range(n):
+        if labels[i] is None: labels[i] = "onset"
+    return labels
+
+
+def _parse_align(alignment_str) -> list:
+    """Parse 'g->p | g->p' into [(grapheme, phoneme_str), ...]."""
+    pairs = []
+    if not alignment_str or pd.isna(alignment_str):
+        return pairs
+    for part in str(alignment_str).split("|"):
+        part = part.strip()
+        if "->" in part:
+            g, p = part.split("->", 1)
+            pairs.append((g.strip(), p.strip()))
+    return pairs
+
+
+try:
+    wlm = pd.read_excel(MAPPING_FILE, sheet_name="Word_level_metrics")
+    freq_lookup = (
+        df.groupby("WORD_norm")[FREQ_COL]
+          .sum()
+          .to_dict()
+    )
+
+    # Distributions: position -> key -> mapped_value -> weighted_count
+    gpc_pos = {pos: defaultdict(lambda: defaultdict(float))
+               for pos in ("onset", "nucleus", "coda")}
+    pgc_pos = {pos: defaultdict(lambda: defaultdict(float))
+               for pos in ("onset", "nucleus", "coda")}
+
+    for _, wrow in wlm.iterrows():
+        word_norm = normalize_word(wrow.get("WORD_normalized", ""))
+        freq = freq_lookup.get(word_norm, 0.0)
+        if not isinstance(freq, (int, float)) or freq <= 0:
+            continue
+        pairs = _parse_align(wrow.get("alignments", ""))
+        if not pairs:
+            continue
+
+        # Expand compound phonemes ("ʔ+ɑ" → ["ʔ", "ɑ"]), keep grapheme for each
+        expanded = []
+        for g, p in pairs:
+            if p == NULL_G:
+                continue  # silent grapheme — no phoneme
+            for sub_p in p.split("+"):
+                sub_p = sub_p.strip()
+                if sub_p:
+                    expanded.append((g, sub_p))
+
+        phon_segs = []
+        for _, p in expanded:
+            phon_segs.extend(_tok_ipa(p))
+
+        pos_labels = _label_pos(phon_segs)
+        seg_idx = 0
+
+        for g, p in expanded:
+            toks = _tok_ipa(p)
+            if not toks or seg_idx >= len(pos_labels):
+                seg_idx += len(toks)
+                continue
+            pos = pos_labels[seg_idx]
+
+            if g != NULL_G:
+                # GPC: grapheme -> phoneme at this position
+                gpc_pos[pos][g][p] += freq
+
+            # PGC: each phoneme token -> grapheme at this position
+            for tok in toks:
+                pgc_pos[pos][tok][g] += freq
+                if seg_idx < len(pos_labels):
+                    pos = pos_labels[seg_idx]
+                seg_idx += 1
+            continue
+            seg_idx += len(toks)  # already incremented above
+
+    # Re-run seg_idx accumulation correctly (fix the loop above)
+    # Recompute properly
+    gpc_pos = {pos: defaultdict(lambda: defaultdict(float))
+               for pos in ("onset", "nucleus", "coda")}
+    pgc_pos = {pos: defaultdict(lambda: defaultdict(float))
+               for pos in ("onset", "nucleus", "coda")}
+
+    for _, wrow in wlm.iterrows():
+        word_norm = normalize_word(wrow.get("WORD_normalized", ""))
+        freq = freq_lookup.get(word_norm, 0.0)
+        if not isinstance(freq, (int, float)) or pd.isna(freq) or freq <= 0:
+            continue
+        pairs = _parse_align(wrow.get("alignments", ""))
+        if not pairs:
+            continue
+
+        expanded = []
+        for g, p in pairs:
+            if p == NULL_G:
+                continue
+            for sub_p in p.split("+"):
+                sub_p = sub_p.strip()
+                if sub_p:
+                    expanded.append((g, sub_p))
+
+        phon_segs = []
+        for _, p in expanded:
+            phon_segs.extend(_tok_ipa(p))
+        pos_labels = _label_pos(phon_segs)
+
+        seg_idx = 0
+        for g, p in expanded:
+            toks = _tok_ipa(p)
+            for tok in toks:
+                if seg_idx >= len(pos_labels):
+                    break
+                pos = pos_labels[seg_idx]
+                if g != NULL_G:
+                    gpc_pos[pos][g][p] += freq
+                pgc_pos[pos][tok][g] += freq
+                seg_idx += 1
+
+    def _entropy_map(pos_dict):
+        return {g: entropy_from_dist(d) for g, d in pos_dict.items()}
+
+    def _merge_rime(pos_dist):
+        merged = defaultdict(lambda: defaultdict(float))
+        for pos in ("nucleus", "coda"):
+            for k, d in pos_dist[pos].items():
+                for v, cnt in d.items():
+                    merged[k][v] += cnt
+        return _entropy_map(merged)
+
+    gpc_onset = _entropy_map(gpc_pos["onset"])
+    gpc_rime  = _merge_rime(gpc_pos)
+    gpc_ovc   = gpc_rime   # OVC ≈ rime (approximation)
+    pgc_onset = _entropy_map(pgc_pos["onset"])
+    pgc_rime  = _merge_rime(pgc_pos)
+    pgc_ovc   = pgc_rime   # OVC ≈ rime (approximation)
+
+    for fname, data in [
+        ("gpc_onset_entropy.json", gpc_onset),
+        ("gpc_rime_entropy.json",  gpc_rime),
+        ("gpc_ovc_entropy.json",   gpc_ovc),
+        ("pgc_onset_entropy.json", pgc_onset),
+        ("pgc_rime_entropy.json",  pgc_rime),
+        ("pgc_ovc_entropy.json",   pgc_ovc),
+    ]:
+        path = os.path.join(DATA_DIR, fname)
+        with open(path, "w", encoding="utf-8") as fh:
+            json.dump(data, fh, ensure_ascii=False)
+        print(f"  -> {fname}: {len(data)} entries")
+
+except Exception as exc:
+    import traceback
+    print(f"  WARNING: position-specific entropy tables failed: {exc}")
+    traceback.print_exc()
+    for fname in ("gpc_onset_entropy.json","gpc_rime_entropy.json","gpc_ovc_entropy.json",
+                  "pgc_onset_entropy.json","pgc_rime_entropy.json","pgc_ovc_entropy.json"):
+        with open(os.path.join(DATA_DIR, fname), "w") as fh:
+            json.dump({}, fh)
+
+# ==========================================================
 # STEP 6 — normalised frequency fallback TSV
 # ==========================================================
 print("Processing frequency fallback ...")

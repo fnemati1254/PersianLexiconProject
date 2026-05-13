@@ -257,8 +257,14 @@ let ouTotal   = 1;
 let puPrefix  = {};
 let puSuffix  = {};
 let puTotal   = 1;
-let gpcEntropy = {};         // grapheme → H_GPC
-let pgcEntropy = {};         // phoneme char → H_PGC
+let gpcEntropy = {};         // grapheme → H_GPC (overall)
+let pgcEntropy = {};         // phoneme char → H_PGC (overall)
+let gpcOnsetEntropy = {};    // grapheme → H_GPC in onset position
+let gpcRimeEntropy  = {};    // grapheme → H_GPC in rime position
+let gpcOvcEntropy   = {};    // grapheme → H_GPC in OVC context
+let pgcOnsetEntropy = {};    // phoneme  → H_PGC in onset position
+let pgcRimeEntropy  = {};    // phoneme  → H_PGC in rime position
+let pgcOvcEntropy   = {};    // phoneme  → H_PGC in OVC context
 let dataReady = false;
 let lastResults = [];        // [{word, norm, row}]
 
@@ -324,13 +330,117 @@ function computePU(phon) {
 // =============================================================
 // IN-BROWSER H_GPC_grapheme / H_PGC_grapheme  (from mapping entropy tables)
 // =============================================================
+// IPA SYLLABIFIER — labels each segment as onset / nucleus / coda
+// =============================================================
+function tokenizeIPA(s) {
+  const segs = [];
+  for (let i = 0; i < s.length; i++) {
+    if (i + 1 < s.length && (s.slice(i, i+2) === "tʃ" || s.slice(i, i+2) === "dʒ")) {
+      segs.push(s.slice(i, i+2)); i++;
+    } else {
+      segs.push(s[i]);
+    }
+  }
+  return segs;
+}
+
+function labelPositions(segs) {
+  const n = segs.length;
+  if (!n) return [];
+  const vpos = segs.map((s, i) => IPA_VOWELS.has(s) ? i : -1).filter(i => i >= 0);
+  const labels = new Array(n).fill(null);
+  if (!vpos.length) return new Array(n).fill("onset");
+
+  for (let vi = 0; vi < vpos.length; vi++) {
+    const vp = vpos[vi];
+    labels[vp] = "nucleus";
+
+    let onsetStart;
+    if (vi === 0) {
+      onsetStart = 0;
+    } else {
+      const prevVp = vpos[vi - 1];
+      const btwn = [];
+      for (let i = prevVp + 1; i < vp; i++) btwn.push(i);
+      if (btwn.length === 0)      { onsetStart = vp; }
+      else if (btwn.length === 1) { onsetStart = btwn[0]; }
+      else if (btwn.length === 2) { if (!labels[btwn[0]]) labels[btwn[0]] = "coda"; onsetStart = btwn[1]; }
+      else {
+        for (let i = 0; i < btwn.length - 2; i++) if (!labels[btwn[i]]) labels[btwn[i]] = "coda";
+        onsetStart = btwn[btwn.length - 2];
+      }
+    }
+    for (let i = onsetStart; i < vp; i++) if (!labels[i]) labels[i] = "onset";
+
+    if (vi + 1 < vpos.length) {
+      const nextVp = vpos[vi + 1];
+      const btwnAfter = [];
+      for (let i = vp + 1; i < nextVp; i++) btwnAfter.push(i);
+      if (btwnAfter.length >= 2) if (!labels[btwnAfter[0]]) labels[btwnAfter[0]] = "coda";
+    } else {
+      for (let i = vp + 1; i < n; i++) if (!labels[i]) labels[i] = "coda";
+    }
+  }
+  for (let i = 0; i < n; i++) if (!labels[i]) labels[i] = "onset";
+  return labels;
+}
+
+// Assign each grapheme a syllable position using a left-to-right heuristic
+function alignGraphemePositions(wordChars, segs, labels) {
+  const positions = new Array(wordChars.length).fill("onset");
+  let si = 0;
+  for (let gi = 0; gi < wordChars.length; gi++) {
+    const expected = PERS_IPA_MAP[wordChars[gi]] || "";
+    // Skip unwritten short vowels in IPA
+    while (si < segs.length && IPA_VOWELS.has(segs[si]) && !expected.includes(segs[si])) si++;
+    if (si < segs.length) {
+      positions[gi] = labels[si] === "nucleus" ? "rime" : (labels[si] === "coda" ? "rime" : "onset");
+      si++;
+    } else {
+      positions[gi] = "rime";
+    }
+  }
+  return positions;
+}
+
+// =============================================================
 function computeGPCGrapheme(word, phon) {
   if (!word || !phon) return {};
+  const segs   = tokenizeIPA(phon);
+  const labels = labelPositions(segs);
+
+  // Overall per-grapheme and per-phoneme entropy (existing)
   const hGPC = [...word].map(ch => gpcEntropy[ch] ?? 0);
-  const hPGC = [...phon].map(ch => pgcEntropy[ch] ?? 0);
+  const hPGC = segs.map(ch => pgcEntropy[ch] ?? 0);
+
+  // Split phoneme segments by position
+  const onsetSegs = segs.filter((_, i) => labels[i] === "onset");
+  const rimeSegs  = segs.filter((_, i) => labels[i] !== "onset");
+
+  // H_PGC by position: look up each phoneme segment's position-specific entropy
+  const hPGCOnset = mean(onsetSegs.map(p => pgcOnsetEntropy[p] ?? 0));
+  const hPGCRime  = mean(rimeSegs.map(p  => pgcRimeEntropy[p]  ?? 0));
+  const hPGCOvc   = mean(rimeSegs.map(p  => pgcOvcEntropy[p]   ?? 0));
+
+  // H_GPC by position: align graphemes to syllable positions
+  const wordChars  = [...word];
+  const gPositions = alignGraphemePositions(wordChars, segs, labels);
+  const onsetG     = wordChars.filter((_, i) => gPositions[i] === "onset");
+  const rimeG      = wordChars.filter((_, i) => gPositions[i] === "rime");
+
+  const hGPCOnset = mean(onsetG.map(g => gpcOnsetEntropy[g] ?? 0));
+  const hGPCRime  = mean(rimeG.map(g  => gpcRimeEntropy[g]  ?? 0));
+  const hGPCOvc   = mean(rimeG.map(g  => gpcOvcEntropy[g]   ?? 0));
+
   return {
     H_GPC_grapheme_word: mean(hGPC).toFixed(6),
     H_PGC_grapheme_word: mean(hPGC).toFixed(6),
+    H_GPC_onset_word:    hGPCOnset.toFixed(6),
+    H_PGC_onset_word:    hPGCOnset.toFixed(6),
+    H_GPC_rime_word:     hGPCRime.toFixed(6),
+    H_PGC_rime_word:     hPGCRime.toFixed(6),
+    H_GPC_OVC_word:      hGPCOvc.toFixed(6),
+    H_PGC_OVC_word:      hPGCOvc.toFixed(6),
   };
 }
 
@@ -398,9 +508,17 @@ async function loadAll() {
     puTotal = puMeta.total_freq || 1;
 
     setLoading("در حال بارگذاری جداول آنتروپی…<br>Loading entropy tables…");
-    [gpcEntropy, pgcEntropy] = await Promise.all([
+    [gpcEntropy, pgcEntropy,
+     gpcOnsetEntropy, gpcRimeEntropy, gpcOvcEntropy,
+     pgcOnsetEntropy, pgcRimeEntropy, pgcOvcEntropy] = await Promise.all([
       fetchJSON("data/grapheme_entropy.json"),
       fetchJSON("data/phoneme_entropy.json"),
+      fetchJSON("data/gpc_onset_entropy.json"),
+      fetchJSON("data/gpc_rime_entropy.json"),
+      fetchJSON("data/gpc_ovc_entropy.json"),
+      fetchJSON("data/pgc_onset_entropy.json"),
+      fetchJSON("data/pgc_rime_entropy.json"),
+      fetchJSON("data/pgc_ovc_entropy.json"),
     ]);
 
     setLoading("در حال بارگذاری بسامد…<br>Loading frequency data…");
