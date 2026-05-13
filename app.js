@@ -481,6 +481,9 @@ function applyTranscription(resultIdx, rawPhon) {
     Transcription1: rawPhon,
     AvePhonLength: phoneLen,
     n_syllables:   syllables,
+    // Word-level GPC/PGC = 0 for out-of-lexicon words (single pronunciation assumed)
+    H_GPC_word: "0.000000",
+    H_PGC_word: "0.000000",
     ...gpc,
     ...(pu ? {
       PUF: pu.PUF.toFixed(6), PUB: pu.PUB.toFixed(6), PU: pu.PU.toFixed(6),
