@@ -429,7 +429,19 @@ function lookupWord(rawWord) {
   if (!norm) return null;
 
   if (lexicon.has(norm)) {
-    return { norm, row: { ...lexicon.get(norm), _source: "lexicon" } };
+    const row = { ...lexicon.get(norm), _source: "lexicon" };
+    // Fill blank phonological length / syllable count from transcription if available
+    const t1 = row.Transcription1;
+    if (t1) {
+      if (row.AvePhonLength === "" || row.AvePhonLength == null) {
+        const seg = normalizeTranscription(t1).replace(/tʃ|dʒ/g, "X");
+        row.AvePhonLength = [...seg].length;
+      }
+      if (row.n_syllables === "" || row.n_syllables == null) {
+        row.n_syllables = [...normalizeTranscription(t1)].filter(ch => IPA_VOWELS.has(ch)).length;
+      }
+    }
+    return { norm, row };
   }
 
   const freq = freqMap.get(norm);
