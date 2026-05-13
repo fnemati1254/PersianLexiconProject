@@ -217,6 +217,19 @@ const IPA_CONSONANTS = new Set([
 const IPA_ALL = new Set([...IPA_VOWELS, ...IPA_CONSONANTS]);
 const DIGRAPHS = ["tʃ","dʒ"];   // treated as two consecutive valid chars
 
+// Persian grapheme → IPA consonant skeleton (vowels must be added by user)
+const PERS_IPA_MAP = {
+  'ا':'ɑ','آ':'ɑ','ب':'b','پ':'p','ت':'t','ث':'s','ج':'dʒ','چ':'tʃ',
+  'ح':'h','خ':'x','د':'d','ذ':'z','ر':'r','ز':'z','ژ':'ʒ','س':'s',
+  'ش':'ʃ','ص':'s','ض':'z','ط':'t','ظ':'z','ع':'ʔ','غ':'ɣ','ف':'f',
+  'ق':'q','ک':'k','گ':'ɡ','ل':'l','م':'m','ن':'n','و':'v','ه':'h',
+  'ی':'j','ئ':'j','ء':'ʔ',
+};
+
+function suggestTranscription(word) {
+  return [...word].map(ch => PERS_IPA_MAP[ch] ?? '').join('');
+}
+
 function validateTranscription(phon) {
   if (!phon || !phon.trim()) return { valid: false, errors: ["لطفاً آوانگاری را وارد کنید / Please enter a transcription."] };
   const errors = [];
@@ -586,11 +599,13 @@ function makeTranscriptionCell(resultIdx, row) {
 
 function makeInputFragment(resultIdx, initial) {
   const frag = document.createDocumentFragment();
+  const word = lastResults[resultIdx]?.row?.WORD ?? "";
+  const suggested = initial || suggestTranscription(word);
 
   const input = document.createElement("input");
   input.type  = "text";
   input.className = "phon-input";
-  input.value = initial;
+  input.value = suggested;
   input.placeholder = "e.g. ketɑb";
   input.setAttribute("dir", "ltr");
   input.setAttribute("spellcheck", "false");
@@ -715,19 +730,19 @@ function doSearch() {
 // =============================================================
 // EXPORT
 // =============================================================
-function exportTSV() {
+function exportXLSX() {
   if (!lastResults.length) return;
   const cols = activeCols();
-  const header = cols.map(c => c.key).join("\t");
-  const rows = lastResults.map(({ row }) =>
-    cols.map(c => { const v = row[c.key]; return (v == null) ? "" : String(v); }).join("\t")
-  );
-  const blob = new Blob(["﻿" + [header, ...rows].join("\n")],
-    { type: "text/tab-separated-values;charset=utf-8" });
-  const a = Object.assign(document.createElement("a"),
-    { href: URL.createObjectURL(blob), download: "persian_lexical_results.tsv" });
-  a.click();
-  URL.revokeObjectURL(a.href);
+  const aoa = [
+    cols.map(c => c.key),
+    ...lastResults.map(({ row }) =>
+      cols.map(c => { const v = row[c.key]; return (v == null) ? "" : String(v); })
+    ),
+  ];
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Results");
+  XLSX.writeFile(wb, "persian_lexical_results.xlsx");
 }
 
 // =============================================================
@@ -752,7 +767,7 @@ document.getElementById("clearBtn").addEventListener("click", () => {
   lastResults = [];
   setStatus("", "");
 });
-document.getElementById("exportBtn").addEventListener("click", exportTSV);
+document.getElementById("exportBtn").addEventListener("click", exportXLSX);
 document.getElementById("wordInput").addEventListener("keydown", e => {
   if (e.key === "Enter" && e.ctrlKey) doSearch();
 });
