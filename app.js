@@ -460,8 +460,15 @@ function applyTranscription(resultIdx, rawPhon) {
   const pu  = computePU(norm);
   const gpc = computeGPCGrapheme(result.row.WORD_norm || result.norm, norm);
 
+  // Count IPA segments (digraphs tʃ/dʒ = 1 segment each)
+  const segmented = norm.replace(/tʃ|dʒ/g, "X");
+  const phoneLen  = [...segmented].length;
+  const syllables = [...norm].filter(ch => IPA_VOWELS.has(ch)).length;
+
   Object.assign(result.row, {
     Transcription1: rawPhon,
+    AvePhonLength: phoneLen,
+    n_syllables:   syllables,
     ...gpc,
     ...(pu ? {
       PUF: pu.PUF.toFixed(6), PUB: pu.PUB.toFixed(6), PU: pu.PU.toFixed(6),
